@@ -1,7 +1,7 @@
 # Commex
 
 ## Установка репозитория:
-1. `git clone <ссылка>`
+1. `git clone git@github.com:HunterXIII/CommexProject.git` (если не сработает, то `git clone https://github.com/HunterXIII/CommexProject.git`)
 2. Переходим в скаченную папку: `cd CommexProject`
 3. Активируем виртуальное окружение: `source .venv/bin/activate`
 4. Скачиваем необходимые библиотеки: `pip install -r requirements.txt`
