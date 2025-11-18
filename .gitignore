@@ -1,2 +1,4 @@
 .vscode
 .venv
+commex/commex/__pycache__/
+commex/main/__pycache__/

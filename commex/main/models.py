@@ -20,6 +20,11 @@ class Chat(models.Model):
 
     def __str__(self):
         return f"{self.user1.username} and {self.user2.username}"
+    
+    class Meta:
+        verbose_name = 'Чат'
+        verbose_name_plural = 'Чаты'
+
 
 class TextMessage(models.Model):
     content = models.TextField()

@@ -2,13 +2,28 @@ from django.contrib import admin
 from django.contrib.auth import get_user_model
 from django.contrib.auth.admin import UserAdmin
 
-from .forms import CustomUserCreationForm, CustomUserChangeForm
-from .models import MessengerUser
+from .forms import *
+from .models import *
 
+
+@admin.register(MessengerUser)
 class MessengerUserAdmin(UserAdmin):
-    add_form = CustomUserCreationForm
-    form = CustomUserChangeForm
+    add_form = MessengerUserCreationForm
+    form = MessengerUserChangeForm
     model = MessengerUser
-    list_display = ['email', 'username', 'birthday']
 
-admin.site.register(MessengerUser, MessengerUserAdmin)
+    fieldsets = (
+        (None, {'fields': ('username', 'password')}),
+        ('Личная информация', {'fields': ('email', 'birthday', 'profile_image', 'status')}),
+        ('Разрешения', {'fields': ('is_staff', 'is_active', 'is_superuser', 'groups', 'user_permissions')}),
+        ('Даты', {'fields': ('last_login', 'date_joined')}),
+    )
+
+    add_fieldsets = (
+        (None, {
+            'classes': ('wide',),
+            'fields': ('username', 'email', 'birthday', 'profile_image', 'status', 'password1', 'password2'),
+        }),
+    )
+
+    list_display = ('email', 'username', 'birthday', 'status')
