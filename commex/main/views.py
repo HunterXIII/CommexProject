@@ -3,8 +3,8 @@ from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm
 from django.db.models import Q
-from .models import MessengerUser, Chat, TextMessage
-from .forms import MessengerUserCreationForm
+from .models import *
+from .forms import *
 
 
 def home(request):

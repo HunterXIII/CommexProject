@@ -28,14 +28,15 @@ class Chat(models.Model):
 
 class TextMessage(models.Model):
     content = models.TextField()
-    date_of_sending = models.DateTimeField(auto_now_add=True)
-    chat = models.ForeignKey(Chat, on_delete=models.CASCADE)
+    date_of_sending = models.DateTimeField(auto_now_add=True)  # уже исправили раньше
+    chat = models.ForeignKey(Chat, on_delete=models.CASCADE, related_name='messages')  # ← добавь related_name
     sender = models.ForeignKey(MessengerUser, on_delete=models.CASCADE)
     is_read = models.BooleanField(default=False)
 
     def __str__(self):
-        return self.content
-    
+        return self.content[:50]
+
     class Meta:
+        ordering = ['date_of_sending']
         verbose_name = 'Текстовое сообщение'
         verbose_name_plural = 'Текстовые сообщения'

@@ -1,16 +1,18 @@
 {% extends 'base.html' %}
-{% block title %}Commex — мессенджер нового поколения{% endblock %}
+{% load static %}
+
+{% block title %}Commex{% endblock %}
 
 {% block content %}
-<div class="text-center py-5">
-    <h1 class="display-3 fw-bold text-primary">Commex</h1>
-    <p class="lead text-muted">Безопасный, быстрый и современный мессенджер</p>
-    <div class="mt-5">
-        {% if user.is_authenticated %}
-        <a href="{% url 'chat_list' %}" class="btn btn-primary btn-lg px-5">Перейти в чаты</a>
-        {% else %}
-        <a href="{% url 'register' %}" class="btn btn-primary btn-lg px-5">Начать сейчас</a>
-        {% endif %}
-    </div>
+<div class="text-center py-5 mt-5">
+    <img src="{% static 'img/logo_commex.jpg' %}" alt="Commex" width="110" class="mb-4 rounded">
+    <h1 class="display-2 fw-bold mb-3">Commex</h1>
+    <p class="lead text-muted fs-4 mb-5">Быстрый. Безопасный. Минималистичный.</p>
+
+    {% if user.is_authenticated %}
+    <a href="{% url 'chat_list' %}" class="btn btn-primary btn-lg px-5">Открыть чаты</a>
+    {% else %}
+    <a href="{% url 'register' %}" class="btn btn-primary btn-lg px-5">Начать общаться</a>
+    {% endif %}
 </div>
 {% endblock %}

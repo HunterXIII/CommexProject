@@ -1,20 +1,89 @@
 {% extends 'base.html' %}
-{% block title %}Регистрация{% endblock %}
+{% block title %}Создать аккаунт{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-6">
-        <div class="card shadow">
+<div class="row justify-content-center mt-4">
+    <div class="col-md-7 col-lg-5">
+        <div class="card shadow-lg border-0">
             <div class="card-body p-5">
-                <h2 class="text-center mb-4">Создать аккаунт</h2>
+
+                <h2 class="text-center mb-5 fw-bold">Создать аккаунт</h2>
+
                 <form method="post" enctype="multipart/form-data">
                     {% csrf_token %}
-                    {{ form.as_p }}
-                    <button type="submit" class="btn btn-primary w-100 mt-3">Зарегистрироваться</button>
+
+                    <!-- Имя пользователя -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Имя пользователя <span
+                                class="text-danger">*</span></label>
+                        {{ form.username }}
+                        {% if form.username.errors %}
+                        <div class="text-danger small mt-1">{{ form.username.errors|join:" " }}</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Email -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Адрес электронной почты</label>
+                        {{ form.email }}
+                        {% if form.email.errors %}
+                        <div class="text-danger small mt-1">{{ form.email.errors|join:" " }}</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Дата рождения -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Дата рождения</label>
+                        {{ form.birthday }}
+                        <div class="form-text">Необязательно</div>
+                    </div>
+
+                    <!-- Аватар -->
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">Аватар</label>
+                        {{ form.profile_image }}
+                        <div class="form-text">Необязательно</div>
+                    </div>
+
+                    <!-- Пароль -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Пароль <span class="text-danger">*</span></label>
+                        {{ form.password1 }}
+                        {% if form.password1.errors %}
+                        {% for error in form.password1.errors %}
+                        <div class="text-danger small mt-1">• {{ error }}</div>
+                        {% endfor %}
+                        {% endif %}
+                    </div>
+
+                    <!-- Подтверждение пароля -->
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">Подтверждение пароля <span
+                                class="text-danger">*</span></label>
+                        {{ form.password2 }}
+                        {% if form.password2.errors %}
+                        <div class="text-danger small mt-1">{{ form.password2.errors|join:" " }}</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Общие ошибки формы -->
+                    {% if form.non_field_errors %}
+                    <div class="alert alert-danger">
+                        {{ form.non_field_errors|join:" " }}
+                    </div>
+                    {% endif %}
+
+                    <button type="submit" class="btn btn-primary btn-lg w-100 shadow-sm">
+                        Зарегистрироваться
+                    </button>
                 </form>
-                <p class="text-center mt-3">
-                    Уже есть аккаунт? <a href="{% url 'login' %}">Войти</a>
-                </p>
+
+                <div class="text-center mt-4">
+                    <small class="text-muted">
+                        Уже есть аккаунт? <a href="{% url 'login' %}" class="fw-semibold">Войти</a>
+                    </small>
+                </div>
+
             </div>
         </div>
     </div>
