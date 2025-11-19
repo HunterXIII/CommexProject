@@ -1,0 +1,10 @@
+<div
+    class="d-flex {% if message.sender == request.user %}justify-content-end{% else %}justify-content-start{% endif %}">
+    <div class="msg {% if message.sender == request.user %}my{% else %}their{% endif %}">
+        {{ message.content }}
+        <div class="small opacity-75 mt-1">
+            {{ message.date_of_sending|time:"H:i" }}
+            {% if message.sender == request.user and message.is_read %}✓✓{% endif %}
+        </div>
+    </div>
+</div>

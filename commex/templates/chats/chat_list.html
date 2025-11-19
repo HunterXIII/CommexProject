@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% block title %}Мои чаты{% endblock %}
+
+{% block content %}
+<h2>Мои чаты</h2>
+<div class="list-group mt-3">
+    {% for chat in chats %}
+    {% include 'chats/components/chat_preview.html' %}
+    {% empty %}
+    <div class="text-center py-5 text-muted">
+        <h5>Пока нет чатов</h5>
+        <p>Найдите пользователей и начните общение!</p>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

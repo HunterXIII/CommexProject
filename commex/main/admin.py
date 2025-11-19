@@ -27,3 +27,7 @@ class MessengerUserAdmin(UserAdmin):
     )
 
     list_display = ('email', 'username', 'birthday', 'status')
+
+admin.site.register(Chat)
+admin.site.register(TextMessage)
+

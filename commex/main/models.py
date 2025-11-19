@@ -28,7 +28,7 @@ class Chat(models.Model):
 
 class TextMessage(models.Model):
     content = models.TextField()
-    date_of_sending = models.DateTimeField()
+    date_of_sending = models.DateTimeField(auto_now_add=True)
     chat = models.ForeignKey(Chat, on_delete=models.CASCADE)
     sender = models.ForeignKey(MessengerUser, on_delete=models.CASCADE)
     is_read = models.BooleanField(default=False)
