@@ -2,13 +2,14 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm
+from django.views.generic.base import *
 from django.db.models import Q
 from .models import *
 from .forms import *
 
 
 def home(request):
-    return render(request, 'home.html')
+    return render(request, 'main/home.html')
 
 
 def register(request):
@@ -20,7 +21,7 @@ def register(request):
             return redirect('chat_list')
     else:
         form = MessengerUserCreationForm()
-    return render(request, 'registration/register.html', {'form': form})
+    return render(request, 'main/registration/register.html', {'form': form})
 
 
 def login_view(request):
@@ -31,7 +32,7 @@ def login_view(request):
             return redirect('chat_list')
     else:
         form = AuthenticationForm()
-    return render(request, 'registration/login.html', {'form': form})
+    return render(request, 'main/registration/login.html', {'form': form})
 
 
 def logout_view(request):
@@ -42,7 +43,7 @@ def logout_view(request):
 @login_required
 def chat_list(request):
     chats = Chat.objects.filter(Q(user1=request.user) | Q(user2=request.user)).order_by('-date_of_creation')
-    return render(request, 'chats/chat_list.html', {'chats': chats})
+    return render(request, 'main/chats/chat_list.html', {'chats': chats})
 
 
 @login_required
@@ -61,7 +62,7 @@ def chat_detail(request, chat_id):
             chat.messages.filter(sender=companion, is_read=False).update(is_read=True)
         return redirect('chat_detail', chat_id)
 
-    return render(request, 'chats/chat_detail.html', {
+    return render(request, 'main/chats/chat_detail.html', {
         'chat': chat,
         'companion': companion,
         'messages': messages
