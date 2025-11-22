@@ -2,14 +2,16 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm
-from django.views.generic.base import *
+from django.views.generic.base import TemplateView
+from django.views.generic import * 
 from django.db.models import Q
+from .mixins import *
 from .models import *
 from .forms import *
 
 
-def home(request):
-    return render(request, 'main/home.html')
+class HomeView(TemplateView):
+    template_name = "main/home.html"
 
 
 def register(request):
@@ -40,30 +42,32 @@ def logout_view(request):
     return redirect('home')
 
 
-@login_required
-def chat_list(request):
-    chats = Chat.objects.filter(Q(user1=request.user) | Q(user2=request.user)).order_by('-date_of_creation')
-    return render(request, 'main/chats/chat_list.html', {'chats': chats})
+class ChatListView(ListView):
+    model = Chat
+    template_name = "main/chats/chat_list.html"
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["chats"] = Chat.objects.filter(Q(user1=self.request.user) | Q(user2=self.request.user)).order_by('-date_of_creation')
+        return context
+    
 
-@login_required
-def chat_detail(request, chat_id):
-    chat = get_object_or_404(Chat, id=chat_id)
-    if request.user not in (chat.user1, chat.user2):
-        return redirect('chat_list')
+class ChatView(ChatAccessMixin, DetailView):
+    model = Chat
+    template_name = "main/chats/chat_detail.html"
 
-    companion = chat.user2 if request.user == chat.user1 else chat.user1
-    messages = chat.messages.all()
-
-    if request.method == 'POST':
-        content = request.POST.get('content').strip()
+    def get_context_data(self, **kwargs):
+        chat = get_object_or_404(Chat, id=self.kwargs.get('pk'))
+        context = super().get_context_data(**kwargs)
+        context["companion"] = chat.user2 if self.request.user == chat.user1 else chat.user1
+        context["messages"] = chat.messages.all()
+        return context
+    
+    def post(self, *args, **kwargs):
+        chat = get_object_or_404(Chat, id=self.kwargs.get('pk'))
+        companion = chat.user2 if self.request.user == chat.user1 else chat.user1
+        content = self.request.POST.get('content').strip()
         if content:
-            TextMessage.objects.create(chat=chat, sender=request.user, content=content)
+            TextMessage.objects.create(chat=chat, sender=self.request.user, content=content)
             chat.messages.filter(sender=companion, is_read=False).update(is_read=True)
-        return redirect('chat_detail', chat_id)
-
-    return render(request, 'main/chats/chat_detail.html', {
-        'chat': chat,
-        'companion': companion,
-        'messages': messages
-    })
+        return redirect('chat_detail', self.kwargs.get('pk'))
