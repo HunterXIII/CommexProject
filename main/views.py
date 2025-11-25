@@ -8,7 +8,8 @@ from django.db.models import Q
 from .mixins import *
 from .models import *
 from .forms import *
-
+from django.http import HttpResponseForbidden
+from django.urls import reverse
 
 class HomeView(TemplateView):
     template_name = "main/home.html"
@@ -55,6 +56,7 @@ class ChatListView(ListView):
 class ChatView(ChatAccessMixin, DetailView):
     model = Chat
     template_name = "main/chats/chat_detail.html"
+    context_object_name = "chat"
 
     def get_context_data(self, **kwargs):
         chat = get_object_or_404(Chat, id=self.kwargs.get('pk'))
@@ -71,3 +73,44 @@ class ChatView(ChatAccessMixin, DetailView):
             TextMessage.objects.create(chat=chat, sender=self.request.user, content=content)
             chat.messages.filter(sender=companion, is_read=False).update(is_read=True)
         return redirect('chat_detail', self.kwargs.get('pk'))
+
+@login_required
+def delete_message(request, message_id):
+    message = get_object_or_404(TextMessage, id=message_id)
+    if message.sender != request.user:
+        return HttpResponseForbidden("You are not allowed to delete this message")
+    cancel_url = reverse('chat_detail', args=[message.chat.id])
+    if request.method == 'POST':
+        message.delete()
+        return redirect(cancel_url)
+    context = {
+        "object_type": "message",
+        "title": "Удалить сообщение",
+        "description": "Сообщение исчезнет для всех участников этого чата. "
+                       "Действие необратимо.",
+        "form_action": reverse('delete_message', args=[message.id]),
+        "cancel_url": cancel_url,
+        "message": message,
+    }
+    return render(request, 'main/chats/delete_confirm.html', context)
+
+@login_required
+def delete_chat(request, chat_id):
+    chat = get_object_or_404(Chat, id=chat_id)
+    if request.user not in [chat.user1, chat.user2]:
+        return HttpResponseForbidden("You are not allowed to delete this chat")
+    if request.method == 'POST':
+        chat.delete()
+        return redirect('chat_list')
+    companion = chat.user2 if request.user == chat.user1 else chat.user1
+    context = {
+        "object_type": "chat",
+        "title": "Удалить чат",
+        "description": f"Вся история общения с {companion.username} будет удалена без возможности восстановления.",
+        "form_action": reverse('delete_chat', args=[chat.id]),
+        "cancel_url": reverse('chat_detail', args=[chat.id]),
+        "chat": chat,
+        "companion": companion,
+        "messages_count": chat.messages.count(),
+    }
+    return render(request, 'main/chats/delete_confirm.html', context)
