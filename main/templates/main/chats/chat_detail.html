@@ -17,6 +17,12 @@
             <h5 class="mb-0 text-white fw-semibold">{{ companion.username }}</h5>
             <small class="text-success">● Онлайн</small>
         </div>
+        <div class="ms-auto d-flex align-items-center gap-2">
+            <a href="{% url 'delete_chat' chat.id %}" class="btn btn-outline-light btn-sm d-flex align-items-center gap-2">
+                <i class="bi bi-trash"></i>
+                <span>Удалить чат</span>
+            </a>
+        </div>
     </div>
 
     <!-- Сообщения -->
@@ -32,6 +38,9 @@
                     <span class="checkmarks">
                         {% if msg.is_read %}✓✓{% else %}✓{% endif %}
                     </span>
+                    <a href="{% url 'delete_message' msg.id %}" class="text-decoration-none text-muted small ms-2">
+                        <i class="bi bi-trash"></i>
+                    </a>
                     {% endif %}
                 </div>
             </div>
@@ -48,8 +57,8 @@
     <div class="border-top border-dark-subtle p-3">
         <form method="post" class="d-flex gap-2">
             {% csrf_token %}
-            <input name="content" type="text" class="form-control flex-grow-1" placeholder="Сообщение..."
-                autocomplete="off" required
+            <input id="message-input" name="content" type="text" class="form-control flex-grow-1" placeholder="Сообщение..."
+                autocomplete="off" required autofocus
                 style="background: #1e1e1e; border: none; border-radius: 24px; padding: 14px 20px; color: white;">
             <button type="submit"
                 class="btn btn-primary rounded-circle d-flex align-items-center justify-content-center"
@@ -62,7 +71,15 @@
 
 <!-- Автоскролл вниз при загрузке -->
 <script>
-    const container = document.getElementById('messages-container');
+const container = document.getElementById('messages-container');
+if (container) {
     container.scrollTop = container.scrollHeight;
+}
+
+const messageInput = document.getElementById('message-input');
+if (messageInput) {
+    messageInput.focus();
+    window.addEventListener('focus', () => messageInput.focus());
+}
 </script>
 {% endblock %}
