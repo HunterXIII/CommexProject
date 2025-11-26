@@ -28,8 +28,7 @@
     <!-- Сообщения -->
     <div id="messages-container" class="flex-grow-1 overflow-auto px-4 py-3" style="background: #0d0d0d;">
         {% for msg in messages %}
-        <div
-            class="d-flex {% if msg.sender == request.user %}justify-content-end{% else %}justify-content-start{% endif %} mb-3">
+        <div class="d-flex {% if msg.sender == request.user %}justify-content-end{% else %}justify-content-start{% endif %} mb-3">
             <div class="message-bubble {% if msg.sender == request.user %}my{% else %}their{% endif %}">
                 <div class="text">{{ msg.content }}</div>
                 <div class="meta">
@@ -53,27 +52,93 @@
         {% endfor %}
     </div>
 
-    <!-- Поле ввода (приклеено снизу) -->
+    <!-- Поле ввода -->
     <div class="border-top border-dark-subtle p-3">
-        <form method="post" class="d-flex gap-2">
-            {% csrf_token %}
-            <input id="message-input" name="content" type="text" class="form-control flex-grow-1" placeholder="Сообщение..."
-                autocomplete="off" required autofocus
+        <div class="d-flex gap-2">
+            <input id="message-input" type="text" class="form-control flex-grow-1"
+                placeholder="Сообщение..." autocomplete="off"
                 style="background: #1e1e1e; border: none; border-radius: 24px; padding: 14px 20px; color: white;">
-            <button type="submit"
+            <button id="send-btn"
                 class="btn btn-primary rounded-circle d-flex align-items-center justify-content-center"
                 style="width: 48px; height: 48px;">
                 <i class="bi bi-send-fill"></i>
             </button>
-        </form>
+        </div>
     </div>
 </div>
 
-<!-- Автоскролл вниз при загрузке -->
 <script>
-const container = document.getElementById('messages-container');
+const chatId = "{{ chat.id }}";
+    const userUsername = "{{ request.user.username }}";
+
+    const messagesContainer = document.getElementById('messages-container');
 if (container) {
-    container.scrollTop = container.scrollHeight;
+    const inputField = document.getElementById('message-input');
+    const sendBtn = document.getElementById('send-btn');
+
+    // Автоскролл при загрузке
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+    // WebSocket init
+    const chatSocket = new WebSocket(
+        "ws://" + window.location.host + "/ws/chat/" + chatId + "/"
+    );
+
+    // Получение сообщений
+    chatSocket.onmessage = function (e) {
+        const data = JSON.parse(e.data);
+
+        addMessageToUI(data.user, data.message);
+    };
+
+    chatSocket.onclose = function () {
+        console.error("WebSocket closed unexpectedly");
+    };
+
+    // Отправка сообщения
+    sendBtn.onclick = sendMessage;
+    inputField.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") sendMessage();
+    });
+
+    function sendMessage() {
+        const message = inputField.value.trim();
+        if (!message) return;
+
+        chatSocket.send(JSON.stringify({
+            "message": message
+        }));
+
+        inputField.value = "";
+    }
+
+    // Функция добавления сообщения в UI
+    function addMessageToUI(username, message) {
+        const wrapper = document.createElement("div");
+        wrapper.classList.add("d-flex", "mb-3");
+        wrapper.classList.add(username === userUsername ? "justify-content-end" : "justify-content-start");
+
+        wrapper.innerHTML = `
+            <div class="message-bubble ${username === userUsername ? "my" : "their"}">
+                <div class="text">${message}</div>
+                <div class="meta">
+                    <span class="time">${currentTime()}</span>
+                    ${username === userUsername ? `<span class="checkmarks">✓</span>` : ""}
+                </div>
+            </div>
+        `;
+
+        messagesContainer.appendChild(wrapper);
+
+        // Автоскролл
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+
+    function currentTime() {
+        const now = new Date();
+        return now.getHours().toString().padStart(2, '0') + ":" +
+               now.getMinutes().toString().padStart(2, '0');
+    }
 }
 
 const messageInput = document.getElementById('message-input');
@@ -82,4 +147,5 @@ if (messageInput) {
     window.addEventListener('focus', () => messageInput.focus());
 }
 </script>
+
 {% endblock %}
