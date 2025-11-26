@@ -68,84 +68,84 @@
 </div>
 
 <script>
-const chatId = "{{ chat.id }}";
+    const chatId = "{{ chat.id }}";
     const userUsername = "{{ request.user.username }}";
 
     const messagesContainer = document.getElementById('messages-container');
-if (container) {
-    const inputField = document.getElementById('message-input');
-    const sendBtn = document.getElementById('send-btn');
+    if (messagesContainer) {
+        const inputField = document.getElementById('message-input');
+        const sendBtn = document.getElementById('send-btn');
 
-    // Автоскролл при загрузке
-    messagesContainer.scrollTop = messagesContainer.scrollHeight;
-
-    // WebSocket init
-    const chatSocket = new WebSocket(
-        "ws://" + window.location.host + "/ws/chat/" + chatId + "/"
-    );
-
-    // Получение сообщений
-    chatSocket.onmessage = function (e) {
-        const data = JSON.parse(e.data);
-
-        addMessageToUI(data.user, data.message);
-    };
-
-    chatSocket.onclose = function () {
-        console.error("WebSocket closed unexpectedly");
-    };
-
-    // Отправка сообщения
-    sendBtn.onclick = sendMessage;
-    inputField.addEventListener("keydown", (e) => {
-        if (e.key === "Enter") sendMessage();
-    });
-
-    function sendMessage() {
-        const message = inputField.value.trim();
-        if (!message) return;
-
-        chatSocket.send(JSON.stringify({
-            "message": message
-        }));
-
-        inputField.value = "";
-    }
-
-    // Функция добавления сообщения в UI
-    function addMessageToUI(username, message) {
-        const wrapper = document.createElement("div");
-        wrapper.classList.add("d-flex", "mb-3");
-        wrapper.classList.add(username === userUsername ? "justify-content-end" : "justify-content-start");
-
-        wrapper.innerHTML = `
-            <div class="message-bubble ${username === userUsername ? "my" : "their"}">
-                <div class="text">${message}</div>
-                <div class="meta">
-                    <span class="time">${currentTime()}</span>
-                    ${username === userUsername ? `<span class="checkmarks">✓</span>` : ""}
-                </div>
-            </div>
-        `;
-
-        messagesContainer.appendChild(wrapper);
-
-        // Автоскролл
+        // Автоскролл при загрузке
         messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+        // WebSocket init
+        const chatSocket = new WebSocket(
+            "ws://" + window.location.host + "/ws/chat/" + chatId + "/"
+        );
+
+        // Получение сообщений
+        chatSocket.onmessage = function (e) {
+            const data = JSON.parse(e.data);
+
+            addMessageToUI(data.user, data.message);
+        };
+
+        chatSocket.onclose = function () {
+            console.error("WebSocket closed unexpectedly");
+        };
+
+        // Отправка сообщения
+        sendBtn.onclick = sendMessage;
+        inputField.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") sendMessage();
+        });
+
+        function sendMessage() {
+            const message = inputField.value.trim();
+            if (!message) return;
+
+            chatSocket.send(JSON.stringify({
+                "message": message
+            }));
+
+            inputField.value = "";
+        }
+
+        // Функция добавления сообщения в UI
+        function addMessageToUI(username, message) {
+            const wrapper = document.createElement("div");
+            wrapper.classList.add("d-flex", "mb-3");
+            wrapper.classList.add(username === userUsername ? "justify-content-end" : "justify-content-start");
+
+            wrapper.innerHTML = `
+                <div class="message-bubble ${username === userUsername ? "my" : "their"}">
+                    <div class="text">${message}</div>
+                    <div class="meta">
+                        <span class="time">${currentTime()}</span>
+                        ${username === userUsername ? `<span class="checkmarks">✓</span>` : ""}
+                    </div>
+                </div>
+            `;
+
+            messagesContainer.appendChild(wrapper);
+
+            // Автоскролл
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function currentTime() {
+            const now = new Date();
+            return now.getHours().toString().padStart(2, '0') + ":" +
+                now.getMinutes().toString().padStart(2, '0');
+        }
     }
 
-    function currentTime() {
-        const now = new Date();
-        return now.getHours().toString().padStart(2, '0') + ":" +
-               now.getMinutes().toString().padStart(2, '0');
+    const messageInput = document.getElementById('message-input');
+    if (messageInput) {
+        messageInput.focus();
+        window.addEventListener('focus', () => messageInput.focus());
     }
-}
-
-const messageInput = document.getElementById('message-input');
-if (messageInput) {
-    messageInput.focus();
-    window.addEventListener('focus', () => messageInput.focus());
-}
 </script>
 
 {% endblock %}
