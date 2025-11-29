@@ -15,7 +15,11 @@
             class="rounded-circle" width="44" height="44" alt="">
         <div>
             <h5 class="mb-0 text-white fw-semibold">{{ companion.username }}</h5>
-            <small class="text-success">● Онлайн</small>
+            {% if companion.status %}
+                <small class="text-success">● Онлайн</small>
+            {% else %}
+                <small>Не в сети</small>
+            {% endif %}
         </div>
         <div class="ms-auto d-flex align-items-center gap-2">
             <a href="{% url 'delete_chat' chat.id %}" class="btn btn-outline-light btn-sm d-flex align-items-center gap-2">

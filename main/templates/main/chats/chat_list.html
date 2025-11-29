@@ -4,6 +4,23 @@
 {% block content %}
 <h2>Мои чаты</h2>
 <div class="list-group mt-3">
+
+    <form method="get">
+        <label for="search_username"></label>
+        <input type="text" name="username" id="search_username" placeholder="Введите username">
+        <button type="submit">Найти</button>
+        <a href="{% url 'chat_list' %}">Сбросить</button>
+    </form>
+
+    {% for user in search_users %}
+        <div>
+            <div>
+                <h5 class="mb-0 text-white fw-semibold"><a href="{% url 'profile' user.id %}">{{ user.username }}</h5>
+            </div>
+        </div>
+    {% endfor %}
+
+
     {% for chat in chats %}
     {% include 'main/chats/components/chat_preview.html' %}
     {% empty %}
