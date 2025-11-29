@@ -1,0 +1,26 @@
+{% extends 'main/base.html' %}
+{% load static %}
+
+{% block title %}{{ profile.username }}{% endblock %}
+
+{% block content %}
+<main>
+    <div>
+        <img
+            src="{% if profile.profile_image %}{{ profile.profile_image.url }}{% else %}{% static 'img/default_avatar.jpg' %}{% endif %}"
+            alt="Аватар {{ profile.username }}"
+            width="150"
+            height="150"
+        />
+    </div>
+
+    <div>
+        <h1>{{ profile.username }}</h1>
+        {% if profile.status %}
+            <span>В сети</span>
+        {% else %}
+            <span>Не в сети</span>
+        {% endif %}
+    </div>
+</main>
+{% endblock %}

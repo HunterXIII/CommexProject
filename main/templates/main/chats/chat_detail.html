@@ -11,7 +11,7 @@
         <a href="{% url 'chat_list' %}" class="text-white">
             <i class="bi bi-arrow-left fs-3"></i>
         </a>
-        <img src="{% if companion.profile_image %}{{ companion.profile_image.url }}{% else %}{% static 'img/default_avatar.png' %}{% endif %}"
+        <img src="{% if companion.profile_image %}{{ companion.profile_image.url }}{% else %}{% static 'img/default_avatar.jpg' %}{% endif %}"
             class="rounded-circle" width="44" height="44" alt="">
         <div>
             <h5 class="mb-0 text-white fw-semibold">{{ companion.username }}</h5>
@@ -72,6 +72,7 @@
     const userUsername = "{{ request.user.username }}";
 
     const messagesContainer = document.getElementById('messages-container');
+
     if (messagesContainer) {
         const inputField = document.getElementById('message-input');
         const sendBtn = document.getElementById('send-btn');
@@ -81,14 +82,17 @@
 
         // WebSocket init
         const chatSocket = new WebSocket(
-            "ws://" + window.location.host + "/ws/chat/" + chatId + "/"
+            (window.location.protocol === "https:" ? "wss://" : "ws://") +
+            window.location.host +
+            "/ws/chat/" + chatId + "/"
         );
 
-        // Получение сообщений
+        // Получение сообщения
         chatSocket.onmessage = function (e) {
             const data = JSON.parse(e.data);
 
-            addMessageToUI(data.user, data.message);
+            // data.user, data.message, data.message_id
+            addMessageToUI(data.user, data.message, data.message_id);
         };
 
         chatSocket.onclose = function () {
@@ -112,18 +116,29 @@
             inputField.value = "";
         }
 
-        // Функция добавления сообщения в UI
-        function addMessageToUI(username, message) {
+
+        // ➤ Добавление сообщения в интерфейс
+        function addMessageToUI(username, message, messageId) {
             const wrapper = document.createElement("div");
             wrapper.classList.add("d-flex", "mb-3");
             wrapper.classList.add(username === userUsername ? "justify-content-end" : "justify-content-start");
+
+            // delete button only for my messages
+            const deleteBtn = username === userUsername
+                ? `<a href="/message/${messageId}/delete" 
+                    class="text-decoration-none text-muted small ms-2">
+                        <i class="bi bi-trash"></i>
+                </a>`
+                : "";
 
             wrapper.innerHTML = `
                 <div class="message-bubble ${username === userUsername ? "my" : "their"}">
                     <div class="text">${message}</div>
                     <div class="meta">
                         <span class="time">${currentTime()}</span>
+
                         ${username === userUsername ? `<span class="checkmarks">✓</span>` : ""}
+                        ${deleteBtn}
                     </div>
                 </div>
             `;
@@ -146,6 +161,7 @@
         messageInput.focus();
         window.addEventListener('focus', () => messageInput.focus());
     }
+
 </script>
 
 {% endblock %}

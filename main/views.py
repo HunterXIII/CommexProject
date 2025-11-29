@@ -114,3 +114,9 @@ def delete_chat(request, chat_id):
         "messages_count": chat.messages.count(),
     }
     return render(request, 'main/chats/delete_confirm.html', context)
+
+
+class ProfileView(DetailView):
+    model = MessengerUser
+    template_name = "main/profile.html"
+    context_object_name = "profile"

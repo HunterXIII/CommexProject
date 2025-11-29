@@ -4,25 +4,22 @@ from channels.db import database_sync_to_async
 from django.contrib.auth.models import AnonymousUser
 
 from .models import Chat, TextMessage
+from django.utils.timezone import now
+
 
 class ChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         self.chat_id = self.scope["url_route"]["kwargs"]["chat_id"]
         self.group_name = f"chat_{self.chat_id}"
 
-        # Проверка входа пользователя
         user = self.scope["user"]
         if user is None or isinstance(user, AnonymousUser):
             await self.close()
             return
 
-        # Проверка: пользователь участник этого чата
-        try:
-            chat = await self.get_chat()
-            if user.id not in [chat.user1_id, chat.user2_id]:
-                await self.close()
-                return
-        except Chat.DoesNotExist:
+        # Проверяем участник ли пользователь чата
+        chat = await self.get_chat()
+        if chat is None or user.id not in [chat.user1_id, chat.user2_id]:
             await self.close()
             return
 
@@ -34,19 +31,22 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
     async def receive(self, text_data):
         data = json.loads(text_data)
-        message = data["message"]
+        message_text = data.get("message", "")
+
         user = self.scope["user"]
 
-        # Сохранить сообщение
-        await self.save_message(user, message)
+        # Сохраняем сообщение → получаем message.id
+        msg = await self.save_message(user, message_text)
 
-        # Разослать обоим участникам чата
+        # Отправляем всем участникам
         await self.channel_layer.group_send(
             self.group_name,
             {
                 "type": "chat_message",
                 "user": user.username,
-                "message": message,
+                "message": message_text,
+                "message_id": msg.id,
+                "time": msg.date_of_sending.strftime("%H:%M"),
             }
         )
 
@@ -54,16 +54,23 @@ class ChatConsumer(AsyncWebsocketConsumer):
         await self.send(json.dumps({
             "user": event["user"],
             "message": event["message"],
+            "message_id": event["message_id"],
+            "time": event["time"],
         }))
+
+    # -------------------------
+    # DATABASE OPERATIONS
+    # -------------------------
 
     @database_sync_to_async
     def get_chat(self):
-        return Chat.objects.get(id=self.chat_id)
+        return Chat.objects.filter(id=self.chat_id).first()
 
     @database_sync_to_async
     def save_message(self, user, message):
         return TextMessage.objects.create(
             chat_id=self.chat_id,
             sender=user,
-            content=message
+            content=message,
+            date_of_sending=now()
         )
