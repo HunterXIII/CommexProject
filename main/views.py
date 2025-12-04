@@ -49,13 +49,29 @@ class ChatListView(ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        context["chats"] = Chat.objects.filter(Q(user1=self.request.user) | Q(user2=self.request.user)).order_by('-date_of_creation')
+
+        return context
+    
+class ChatSearchList(ListView):
+    model = MessengerUser
+    template_name = "main/chats/search.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
         search = self.request.GET.get("username")
         if search:
             context["search_users"] = MessengerUser.objects.filter(username__icontains=search).difference(MessengerUser.objects.filter(username=self.request.user.username))
+            for user in context["search_users"]:
+                try:
+                    chat = Chat.objects.get((Q(user1=self.request.user) and Q(user2=user)) or (Q(user1=user) and Q(user2=self.request.user)))
+                except Chat.DoesNotExist:
+                    chat = None
+
+                 
+
         else:
             context["search_users"] = MessengerUser.objects.none()
-        context["chats"] = Chat.objects.filter(Q(user1=self.request.user) | Q(user2=self.request.user)).order_by('-date_of_creation')
-
         return context
     
 

@@ -1,0 +1,23 @@
+{% extends 'main/base.html' %}
+
+{% block title %}Поиск{% endblock %}
+
+{% block content %}
+
+    <form method="get">
+        <label for="search_username"></label>
+        <input type="text" name="username" id="search_username" placeholder="Введите username">
+        <button type="submit">Найти</button>
+        <a href="{% url 'chat_list' %}">Сбросить</button>
+    </form>
+
+    {% for user in search_users %}
+        <div>
+            <div>
+                <span class="mb-0 text-white fw-semibold"><a href="{% url 'profile' user.id %}">{{ user.username }}</a></span>
+         
+            </div>
+        </div>
+    {% endfor %}
+
+{% endblock %}
