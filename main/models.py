@@ -19,7 +19,7 @@ class Chat(models.Model):
 
     name = models.CharField(max_length=150, default="Chat", verbose_name="Название чата")
 
-    users = models.ManyToManyField(MessengerUser, blank=True, null=True)
+    users = models.ManyToManyField(MessengerUser)
 
     date_of_creation = models.DateTimeField(auto_now_add=True)
 
