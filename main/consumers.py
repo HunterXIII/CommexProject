@@ -19,7 +19,12 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
         # Проверяем участник ли пользователь чата
         chat = await self.get_chat()
-        if chat is None or user.id not in [chat.user1_id, chat.user2_id]:
+        if chat is None:
+            await self.close()
+            return
+
+        is_participant = await self.is_participant(user.id)
+        if not is_participant:
             await self.close()
             return
 
@@ -65,6 +70,10 @@ class ChatConsumer(AsyncWebsocketConsumer):
     @database_sync_to_async
     def get_chat(self):
         return Chat.objects.filter(id=self.chat_id).first()
+
+    @database_sync_to_async
+    def is_participant(self, user_id):
+        return Chat.objects.filter(id=self.chat_id, users__id=user_id).exists()
 
     @database_sync_to_async
     def save_message(self, user, message):
