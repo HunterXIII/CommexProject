@@ -14,12 +14,17 @@ class MessengerUser(AbstractUser):
 
 
 class Chat(models.Model):
-    user1 = models.ForeignKey(MessengerUser, on_delete=models.CASCADE, related_name='user1')
-    user2 = models.ForeignKey(MessengerUser, on_delete=models.CASCADE, related_name='user2')
+    # user1 = models.ForeignKey(MessengerUser, on_delete=models.CASCADE, related_name='user1')
+    # user2 = models.ForeignKey(MessengerUser, on_delete=models.CASCADE, related_name='user2')
+
+    name = models.CharField(max_length=150, default="Chat", verbose_name="Название чата")
+
+    users = models.ManyToManyField(MessengerUser, blank=True, null=True)
+
     date_of_creation = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"{self.user1.username} and {self.user2.username}"
+        return f"Chat {self.id}"
     
     class Meta:
         verbose_name = 'Чат'

@@ -49,9 +49,10 @@ class ChatListView(ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["chats"] = Chat.objects.filter(Q(user1=self.request.user) | Q(user2=self.request.user)).order_by('-date_of_creation')
+        context["chats"] = Chat.objects.filter(users__in=[self.request.user]).order_by('-date_of_creation')
 
         return context
+    
     
 class ChatSearchList(ListView):
     model = MessengerUser
@@ -62,14 +63,6 @@ class ChatSearchList(ListView):
         search = self.request.GET.get("username")
         if search:
             context["search_users"] = MessengerUser.objects.filter(username__icontains=search).difference(MessengerUser.objects.filter(username=self.request.user.username))
-            for user in context["search_users"]:
-                try:
-                    chat = Chat.objects.get((Q(user1=self.request.user) and Q(user2=user)) or (Q(user1=user) and Q(user2=self.request.user)))
-                except Chat.DoesNotExist:
-                    chat = None
-
-                 
-
         else:
             context["search_users"] = MessengerUser.objects.none()
         return context
@@ -96,6 +89,7 @@ class ChatView(ChatAccessMixin, DetailView):
             chat.messages.filter(sender=companion, is_read=False).update(is_read=True)
         return redirect('chat_detail', self.kwargs.get('pk'))
 
+
 @login_required
 def delete_message(request, message_id):
     message = get_object_or_404(TextMessage, id=message_id)
@@ -115,6 +109,7 @@ def delete_message(request, message_id):
         "message": message,
     }
     return render(request, 'main/chats/delete_confirm.html', context)
+
 
 @login_required
 def delete_chat(request, chat_id):
