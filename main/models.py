@@ -25,6 +25,21 @@ class Chat(models.Model):
 
     def __str__(self):
         return f"Chat {self.id}"
+
+    def has_participant(self, user):
+        if user is None or getattr(user, "pk", None) is None:
+            return False
+        user_pk = user.pk
+        return any(participant.pk == user_pk for participant in self.users.all())
+
+    def get_companion(self, user):
+        if user is None or getattr(user, "pk", None) is None:
+            return None
+        user_pk = user.pk
+        for participant in self.users.all():
+            if participant.pk != user_pk:
+                return participant
+        return None
     
     class Meta:
         verbose_name = 'Чат'

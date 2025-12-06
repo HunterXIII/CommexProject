@@ -4,12 +4,12 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm
 from django.views.generic.base import TemplateView
 from django.views.generic import * 
-from django.db.models import Q
 from .mixins import *
 from .models import *
 from .forms import *
 from django.http import HttpResponseForbidden
 from django.urls import reverse
+from django.views.decorators.http import require_POST
 
 class HomeView(TemplateView):
     template_name = "main/home.html"
@@ -49,8 +49,13 @@ class ChatListView(ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["chats"] = Chat.objects.filter(users__in=[self.request.user]).order_by('-date_of_creation')
-
+        chats = (Chat.objects
+                 .filter(users=self.request.user)
+                 .prefetch_related('users', 'messages')
+                 .order_by('-date_of_creation'))
+        for chat in chats:
+            chat.companion = chat.get_companion(self.request.user)
+        context["chats"] = chats
         return context
     
     
@@ -76,18 +81,39 @@ class ChatView(ChatAccessMixin, DetailView):
     def get_context_data(self, **kwargs):
         chat = get_object_or_404(Chat, id=self.kwargs.get('pk'))
         context = super().get_context_data(**kwargs)
-        context["companion"] = chat.user2 if self.request.user == chat.user1 else chat.user1
+        context["companion"] = chat.get_companion(self.request.user)
         context["messages"] = chat.messages.all()
         return context
     
     def post(self, *args, **kwargs):
         chat = get_object_or_404(Chat, id=self.kwargs.get('pk'))
-        companion = chat.user2 if self.request.user == chat.user1 else chat.user1
+        companion = chat.get_companion(self.request.user)
         content = self.request.POST.get('content').strip()
         if content:
             TextMessage.objects.create(chat=chat, sender=self.request.user, content=content)
-            chat.messages.filter(sender=companion, is_read=False).update(is_read=True)
+            if companion:
+                chat.messages.filter(sender=companion, is_read=False).update(is_read=True)
         return redirect('chat_detail', self.kwargs.get('pk'))
+
+
+@login_required
+@require_POST
+def start_chat(request, user_id):
+    companion = get_object_or_404(MessengerUser, id=user_id)
+    if companion == request.user:
+        return redirect('chat_search')
+
+    chat = (Chat.objects
+            .filter(users=request.user)
+            .filter(users=companion)
+            .distinct()
+            .first())
+
+    if chat is None:
+        chat = Chat.objects.create(name=f"Chat {request.user.username}-{companion.username}")
+        chat.users.add(request.user, companion)
+
+    return redirect('chat_detail', chat.pk)
 
 
 @login_required
@@ -114,16 +140,17 @@ def delete_message(request, message_id):
 @login_required
 def delete_chat(request, chat_id):
     chat = get_object_or_404(Chat, id=chat_id)
-    if request.user not in [chat.user1, chat.user2]:
+    if not chat.has_participant(request.user):
         return HttpResponseForbidden("You are not allowed to delete this chat")
     if request.method == 'POST':
         chat.delete()
         return redirect('chat_list')
-    companion = chat.user2 if request.user == chat.user1 else chat.user1
+    companion = chat.get_companion(request.user)
+    companion_name = companion.username if companion else "неизвестным пользователем"
     context = {
         "object_type": "chat",
         "title": "Удалить чат",
-        "description": f"Вся история общения с {companion.username} будет удалена без возможности восстановления.",
+        "description": f"Вся история общения с {companion_name} будет удалена без возможности восстановления.",
         "form_action": reverse('delete_chat', args=[chat.id]),
         "cancel_url": reverse('chat_detail', args=[chat.id]),
         "chat": chat,

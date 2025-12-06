@@ -15,9 +15,14 @@
         <div>
             <div>
                 <span class="mb-0 text-white fw-semibold"><a href="{% url 'profile' user.id %}">{{ user.username }}</a></span>
-         
+                <form method="post" action="{% url 'chat_start' user.id %}">
+                    {% csrf_token %}
+                    <button type="submit">Начать общение</button>
+                </form>
             </div>
         </div>
+    {% empty %}
+        <p>Пользователи не найдены.</p>
     {% endfor %}
 
 {% endblock %}
