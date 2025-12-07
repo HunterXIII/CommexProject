@@ -22,6 +22,7 @@ ALLOWED_HOSTS = ["*"]
 INSTALLED_APPS = [
     'daphne',
     'channels',
+    "unfold", 
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -133,4 +134,13 @@ CHANNEL_LAYERS = {
             "hosts": [("127.0.0.1", 6379)]
         }
     }
+}
+
+
+UNFOLD = {
+    # Последний пункт, необязателен. Будут доступны все темы для админ-панели
+    "SITE_TITLE": "Commex",  # Заголовок в браузере
+    "SITE_HEADER": "Админ-панель",           # Заголовок в шапке
+    "SITE_ICON": "/static/img/logo_commex.jpg",         # Путь к логотипу (SVG/PNG)
+    "THEME": "dark",  # "light", "dark" или "auto" (автоопределение)
 }
