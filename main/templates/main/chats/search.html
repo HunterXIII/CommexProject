@@ -2,27 +2,84 @@
 
 {% block title %}Поиск{% endblock %}
 
+{% block extra_css %}
+<style>
+    .search-card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 24px;
+    }
+
+    .search-result {
+        background: #0d0d0d;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 16px;
+        transition: border-color 0.15s ease, transform 0.15s ease;
+    }
+
+    .search-result:hover {
+        border-color: #555;
+        transform: translateY(-1px);
+    }
+
+    .search-card .btn {
+        height: 48px;
+        border-radius: 14px;
+        font-weight: 600;
+    }
+
+    .search-card .btn-outline-light {
+        border-color: var(--border);
+        color: var(--text);
+        background: transparent;
+    }
+
+    .search-card .btn-outline-light:hover {
+        background: #1a1a1a;
+        border-color: #555;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="search-card mb-4">
+            <form method="get" class="d-flex align-items-center gap-2">
+                <div class="input-group flex-grow-1">
+                    <span class="input-group-text bg-black border-0 text-muted">
+                        <i class="bi bi-search"></i>
+                    </span>
+                    <input type="text" name="username" id="search_username" value="{{ request.GET.username }}"
+                        class="form-control" placeholder="Введите username">
+                </div>
+                <button type="submit" class="btn btn-primary">Найти</button>
+                <a href="{% url 'chat_list' %}" class="btn btn-outline-light">Сбросить</a>
+            </form>
+        </div>
 
-    <form method="get">
-        <label for="search_username"></label>
-        <input type="text" name="username" id="search_username" placeholder="Введите username">
-        <button type="submit">Найти</button>
-        <a href="{% url 'chat_list' %}">Сбросить</button>
-    </form>
-
-    {% for user in search_users %}
-        <div>
-            <div>
-                <span class="mb-0 text-white fw-semibold"><a href="{% url 'profile' user.id %}">{{ user.username }}</a></span>
-                <form method="post" action="{% url 'chat_start' user.id %}">
+        <div class="d-flex flex-column gap-3">
+            {% for user in search_users %}
+            <div class="search-result d-flex align-items-center justify-content-between">
+                <div>
+                    <a href="{% url 'profile' user.id %}" class="text-white fw-semibold text-decoration-none">{{
+                        user.username }}</a>
+                    <div class="text-muted small">{{ user.email }}</div>
+                </div>
+                <form method="post" action="{% url 'chat_start' user.id %}" class="ms-3">
                     {% csrf_token %}
-                    <button type="submit">Начать общение</button>
+                    <button type="submit" class="btn btn-outline-light btn-sm">Начать общение</button>
                 </form>
             </div>
+            {% empty %}
+            <div class="text-center text-muted py-4 border border-dashed rounded-3"
+                style="border-color: var(--border);">
+                Пользователи не найдены.
+            </div>
+            {% endfor %}
         </div>
-    {% empty %}
-        <p>Пользователи не найдены.</p>
-    {% endfor %}
-
+    </div>
+</div>
 {% endblock %}
