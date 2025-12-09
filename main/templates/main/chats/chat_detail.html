@@ -32,7 +32,8 @@
     <!-- Сообщения -->
     <div id="messages-container" class="flex-grow-1 overflow-auto px-4 py-3" style="background: #0d0d0d;">
         {% for msg in messages %}
-        <div class="d-flex {% if msg.sender == request.user %}justify-content-end{% else %}justify-content-start{% endif %} mb-3">
+        <div class="d-flex {% if msg.sender == request.user %}justify-content-end{% else %}justify-content-start{% endif %} mb-3"
+            data-message-id="{{ msg.id }}">
             <div class="message-bubble {% if msg.sender == request.user %}my{% else %}their{% endif %}">
                 <div class="text">{{ msg.content }}</div>
                 <div class="meta">
@@ -41,9 +42,11 @@
                     <span class="checkmarks">
                         {% if msg.is_read %}✓✓{% else %}✓{% endif %}
                     </span>
-                    <a href="{% url 'delete_message' msg.id %}" class="text-decoration-none text-muted small ms-2">
+                    <button type="button"
+                        class="btn btn-link p-0 text-decoration-none text-muted small ms-2 message-delete-btn"
+                        data-delete-message="true" data-message-id="{{ msg.id }}">
                         <i class="bi bi-trash"></i>
-                    </a>
+                    </button>
                     {% endif %}
                 </div>
             </div>
@@ -94,9 +97,11 @@
         // Получение сообщения
         chatSocket.onmessage = function (e) {
             const data = JSON.parse(e.data);
-
-            // data.user, data.message, data.message_id
-            addMessageToUI(data.user, data.message, data.message_id);
+            if (data.event === "message_created") {
+                addMessageToUI(data.user, data.message, data.message_id);
+            } else if (data.event === "message_deleted") {
+                removeMessageFromUI(data.message_id);
+            }
         };
 
         chatSocket.onclose = function () {
@@ -109,15 +114,32 @@
             if (e.key === "Enter") sendMessage();
         });
 
+        messagesContainer.addEventListener("click", (e) => {
+            const deleteBtn = e.target.closest("[data-delete-message='true']");
+            if (!deleteBtn) return;
+            const messageId = deleteBtn.dataset.messageId;
+            if (messageId) {
+                requestDelete(messageId);
+            }
+        });
+
         function sendMessage() {
             const message = inputField.value.trim();
             if (!message) return;
 
             chatSocket.send(JSON.stringify({
+                "action": "send_message",
                 "message": message
             }));
 
             inputField.value = "";
+        }
+
+        function requestDelete(messageId) {
+            chatSocket.send(JSON.stringify({
+                "action": "delete_message",
+                "message_id": messageId
+            }));
         }
 
 
@@ -126,13 +148,15 @@
             const wrapper = document.createElement("div");
             wrapper.classList.add("d-flex", "mb-3");
             wrapper.classList.add(username === userUsername ? "justify-content-end" : "justify-content-start");
+            wrapper.dataset.messageId = messageId;
 
             // delete button only for my messages
             const deleteBtn = username === userUsername
-                ? `<a href="/message/${messageId}/delete" 
-                    class="text-decoration-none text-muted small ms-2">
+                ? `<button type="button"
+                        class="btn btn-link p-0 text-decoration-none text-muted small ms-2"
+                        data-delete-message="true" data-message-id="${messageId}">
                         <i class="bi bi-trash"></i>
-                </a>`
+                   </button>`
                 : "";
 
             wrapper.innerHTML = `
@@ -151,6 +175,14 @@
 
             // Автоскролл
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function removeMessageFromUI(messageId) {
+            if (!messageId) return;
+            const messageEl = messagesContainer.querySelector(`[data-message-id="${messageId}"]`);
+            if (messageEl) {
+                messageEl.remove();
+            }
         }
 
         function currentTime() {
