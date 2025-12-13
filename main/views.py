@@ -1,46 +1,42 @@
-from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth import login, logout, authenticate
-from django.contrib.auth.decorators import login_required
+from django.shortcuts import redirect, get_object_or_404
+from django.contrib.auth import login
 from django.contrib.auth.forms import AuthenticationForm
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.views import LoginView as DjangoLoginView, LogoutView as DjangoLogoutView
 from django.views.generic.base import TemplateView
 from django.views.generic import * 
 from .mixins import *
 from .models import *
 from .forms import *
 from django.http import HttpResponseForbidden
-from django.urls import reverse
-from django.views.decorators.http import require_POST
+from django.urls import reverse, reverse_lazy
+from django.views import View
 
 class HomeView(TemplateView):
     template_name = "main/home.html"
 
 
-def register(request):
-    if request.method == 'POST':
-        form = MessengerUserCreationForm(request.POST, request.FILES)
-        if form.is_valid():
-            user = form.save()
-            login(request, user)
-            return redirect('chat_list')
-    else:
-        form = MessengerUserCreationForm()
-    return render(request, 'main/registration/register.html', {'form': form})
+class RegisterView(FormView):
+    template_name = "main/registration/register.html"
+    form_class = MessengerUserCreationForm
+    success_url = reverse_lazy('chat_list')
+
+    def form_valid(self, form):
+        user = form.save()
+        login(self.request, user)
+        return super().form_valid(form)
 
 
-def login_view(request):
-    if request.method == 'POST':
-        form = AuthenticationForm(request, data=request.POST)
-        if form.is_valid():
-            login(request, form.get_user())
-            return redirect('chat_list')
-    else:
-        form = AuthenticationForm()
-    return render(request, 'main/registration/login.html', {'form': form})
+class UserLoginView(DjangoLoginView):
+    template_name = "main/registration/login.html"
+    authentication_form = AuthenticationForm
+
+    def get_success_url(self):
+        return reverse('chat_list')
 
 
-def logout_view(request):
-    logout(request)
-    return redirect('home')
+class UserLogoutView(DjangoLogoutView):
+    next_page = 'home'
 
 
 class ChatListView(ListView):
@@ -96,68 +92,85 @@ class ChatView(ChatAccessMixin, DetailView):
         return redirect('chat_detail', self.kwargs.get('pk'))
 
 
-@login_required
-@require_POST
-def start_chat(request, user_id):
-    companion = get_object_or_404(MessengerUser, id=user_id)
-    if companion == request.user:
-        return redirect('chat_search')
+class StartChatView(LoginRequiredMixin, View):
+    http_method_names = ['post']
 
-    chat = (Chat.objects
-            .filter(users=request.user)
-            .filter(users=companion)
-            .distinct()
-            .first())
+    def post(self, request, user_id, *args, **kwargs):
+        companion = get_object_or_404(MessengerUser, id=user_id)
+        if companion == request.user:
+            return redirect('chat_search')
 
-    if chat is None:
-        chat = Chat.objects.create(name=f"Chat {request.user.username}-{companion.username}")
-        chat.users.add(request.user, companion)
+        chat = (Chat.objects
+                .filter(users=request.user)
+                .filter(users=companion)
+                .distinct()
+                .first())
 
-    return redirect('chat_detail', chat.pk)
+        if chat is None:
+            chat = Chat.objects.create(name=f"Chat {request.user.username}-{companion.username}")
+            chat.users.add(request.user, companion)
 
-
-@login_required
-def delete_message(request, message_id):
-    message = get_object_or_404(TextMessage, id=message_id)
-    if message.sender != request.user:
-        return HttpResponseForbidden("You are not allowed to delete this message")
-    cancel_url = reverse('chat_detail', args=[message.chat.id])
-    if request.method == 'POST':
-        message.delete()
-        return redirect(cancel_url)
-    context = {
-        "object_type": "message",
-        "title": "Удалить сообщение",
-        "description": "Сообщение исчезнет для всех участников этого чата. "
-                       "Действие необратимо.",
-        "form_action": reverse('delete_message', args=[message.id]),
-        "cancel_url": cancel_url,
-        "message": message,
-    }
-    return render(request, 'main/chats/delete_confirm.html', context)
+        return redirect('chat_detail', chat.pk)
 
 
-@login_required
-def delete_chat(request, chat_id):
-    chat = get_object_or_404(Chat, id=chat_id)
-    if not chat.has_participant(request.user):
-        return HttpResponseForbidden("You are not allowed to delete this chat")
-    if request.method == 'POST':
-        chat.delete()
-        return redirect('chat_list')
-    companion = chat.get_companion(request.user)
-    companion_name = companion.username if companion else "неизвестным пользователем"
-    context = {
-        "object_type": "chat",
-        "title": "Удалить чат",
-        "description": f"Вся история общения с {companion_name} будет удалена без возможности восстановления.",
-        "form_action": reverse('delete_chat', args=[chat.id]),
-        "cancel_url": reverse('chat_detail', args=[chat.id]),
-        "chat": chat,
-        "companion": companion,
-        "messages_count": chat.messages.count(),
-    }
-    return render(request, 'main/chats/delete_confirm.html', context)
+class MessageDeleteView(LoginRequiredMixin, DeleteView):
+    model = TextMessage
+    template_name = "main/chats/delete_confirm.html"
+    context_object_name = "message"
+    pk_url_kwarg = "message_id"
+
+    def dispatch(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        if self.object.sender != request.user:
+            return HttpResponseForbidden("You are not allowed to delete this message")
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        cancel_url = reverse('chat_detail', args=[self.object.chat.id])
+        context.update({
+            "object_type": "message",
+            "title": "Удалить сообщение",
+            "description": "Сообщение исчезнет для всех участников этого чата. "
+                           "Действие необратимо.",
+            "form_action": reverse('delete_message', args=[self.object.id]),
+            "cancel_url": cancel_url,
+        })
+        return context
+
+    def get_success_url(self):
+        return reverse('chat_detail', args=[self.object.chat.id])
+
+
+class ChatDeleteView(LoginRequiredMixin, DeleteView):
+    model = Chat
+    template_name = "main/chats/delete_confirm.html"
+    context_object_name = "chat"
+    pk_url_kwarg = "chat_id"
+
+    def dispatch(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        if not self.object.has_participant(request.user):
+            return HttpResponseForbidden("You are not allowed to delete this chat")
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        companion = self.object.get_companion(self.request.user)
+        companion_name = companion.username if companion else "неизвестным пользователем"
+        context.update({
+            "object_type": "chat",
+            "title": "Удалить чат",
+            "description": f"Вся история общения с {companion_name} будет удалена без возможности восстановления.",
+            "form_action": reverse('delete_chat', args=[self.object.id]),
+            "cancel_url": reverse('chat_detail', args=[self.object.id]),
+            "companion": companion,
+            "messages_count": self.object.messages.count(),
+        })
+        return context
+
+    def get_success_url(self):
+        return reverse('chat_list')
 
 
 class ProfileView(DetailView):

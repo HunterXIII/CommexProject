@@ -2,9 +2,14 @@
 {% block title %}Мои чаты{% endblock %}
 
 {% block content %}
-<h2>Мои чаты</h2>
+<div class="d-flex align-items-center justify-content-between mb-3">
+    <h2 class="mb-0">Мои чаты</h2>
+    <a href="{% url 'chat_search' %}" class="btn btn-primary fw-semibold"
+        style="border-radius: 14px; padding: 0.6rem 1.2rem;">
+        <i class="bi bi-search me-2"></i>Поиск
+    </a>
+</div>
 <div class="list-group mt-3">
-    <a href="{% url 'chat_search' %}">Поиск</a>
     {% for chat in chats %}
     {% include 'main/chats/components/chat_preview.html' %}
     {% empty %}
