@@ -53,6 +53,8 @@ class TextMessage(models.Model):
     sender = models.ForeignKey(MessengerUser, on_delete=models.CASCADE)
     is_read = models.BooleanField(default=False)
 
+    iv = models.CharField(max_length=24)
+
     def __str__(self):
         return self.content[:50]
 
