@@ -1,6 +1,6 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
-
+from .crypto.aes import decrypt_message
 # Create your models here.
 
 class MessengerUser(AbstractUser):
@@ -53,10 +53,13 @@ class TextMessage(models.Model):
     sender = models.ForeignKey(MessengerUser, on_delete=models.CASCADE)
     is_read = models.BooleanField(default=False)
 
-    iv = models.CharField(max_length=24)
+    iv = models.CharField(max_length=32)
 
     def __str__(self):
         return self.content[:50]
+
+    def decrypt_content(self):
+        return decrypt_message(self.content, self.iv)
 
     class Meta:
         ordering = ['date_of_sending']

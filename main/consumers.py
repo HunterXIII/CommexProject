@@ -6,6 +6,8 @@ from django.contrib.auth.models import AnonymousUser
 from .models import Chat, TextMessage
 from django.utils.timezone import now
 
+from .crypto.aes import encrypt_message, decrypt_message
+from asgiref.sync import sync_to_async
 
 class ChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):
@@ -19,7 +21,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
         # Проверяем участник ли пользователь чата
         chat = await self.get_chat()
-        if chat is None or user.id not in [chat.user1_id, chat.user2_id]:
+        if chat is None or not await self.is_user_in_chat(user, chat):
             await self.close()
             return
 
@@ -32,26 +34,27 @@ class ChatConsumer(AsyncWebsocketConsumer):
     async def receive(self, text_data):
         data = json.loads(text_data)
         message_text = data.get("message", "")
-
         user = self.scope["user"]
 
-        # Сохраняем сообщение → получаем message.id
         msg = await self.save_message(user, message_text)
 
-        # Отправляем всем участникам
+        decrypted = await self.decrypt_db_message(msg)
+
         await self.channel_layer.group_send(
             self.group_name,
             {
                 "type": "chat_message",
                 "user": user.username,
-                "message": message_text,
+                "message": decrypted,
                 "message_id": msg.id,
                 "time": msg.date_of_sending.strftime("%H:%M"),
             }
         )
 
+
     async def chat_message(self, event):
         await self.send(json.dumps({
+            "event": "message_created", 
             "user": event["user"],
             "message": event["message"],
             "message_id": event["message_id"],
@@ -68,9 +71,19 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
     @database_sync_to_async
     def save_message(self, user, message):
+        content, iv = encrypt_message(message)
         return TextMessage.objects.create(
             chat_id=self.chat_id,
             sender=user,
-            content=message,
+            content=content,
+            iv=iv,
             date_of_sending=now()
         )
+
+    @database_sync_to_async
+    def is_user_in_chat(self, user, chat):
+        return user in chat.users.all()
+
+    @sync_to_async
+    def decrypt_db_message(self, msg):
+        return decrypt_message(msg.content, msg.iv)

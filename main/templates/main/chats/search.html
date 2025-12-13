@@ -64,8 +64,9 @@
             {% for user in search_users %}
             <div class="search-result d-flex align-items-center justify-content-between">
                 <div>
-                    <a href="{% url 'profile' user.id %}" class="text-white fw-semibold text-decoration-none">{{
-                        user.username }}</a>
+                    <a href="{% url 'profile' user.id %}" class="text-white fw-semibold text-decoration-none">
+                        {{ user.username }}
+                    </a>
                     <div class="text-muted small">{{ user.email }}</div>
                 </div>
                 <form method="post" action="{% url 'chat_start' user.id %}" class="ms-3">

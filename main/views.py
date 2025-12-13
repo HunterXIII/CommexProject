@@ -12,6 +12,8 @@ from django.http import HttpResponseForbidden
 from django.urls import reverse, reverse_lazy
 from django.views import View
 
+from .crypto.aes import decrypt_message
+
 class HomeView(TemplateView):
     template_name = "main/home.html"
 
@@ -78,7 +80,12 @@ class ChatView(ChatAccessMixin, DetailView):
         chat = get_object_or_404(Chat, id=self.kwargs.get('pk'))
         context = super().get_context_data(**kwargs)
         context["companion"] = chat.get_companion(self.request.user)
-        context["messages"] = chat.messages.all()
+        messages = []
+        for message in chat.messages.all():
+            decode_message = message
+            decode_message.content = decrypt_message(message.content, message.iv)
+            messages.append(decode_message)
+        context["messages"] = messages
         return context
     
     def post(self, *args, **kwargs):

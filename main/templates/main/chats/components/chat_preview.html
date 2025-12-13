@@ -15,7 +15,7 @@
     </div>
     <p class="mb-1 text-muted">
         {% with last=chat.messages.last %}
-        {{ last.content|truncatechars:50|default:"Чат создан" }}
+        {{ last.decrypt_content|truncatechars:50|default:"Чат создан" }}
         {% endwith %}
     </p>
 </a>
