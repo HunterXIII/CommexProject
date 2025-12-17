@@ -1,57 +1,111 @@
-# Commex — приватный мессенджер для быстрого обмена сообщениями
+# Commex
+**Commex** — это веб-приложение, мессенджер. Пользователи могут регистрироваться, находить собеседников, создавать диалоги и общаться в реальном времени.
 
-Commex — это веб‑клиент, который сочетает привычные чаты и защищённые сообщения. Пользователи могут регистрироваться, находить собеседников, создавать диалоги и общаться в реальном времени через WebSocket, а содержимое сообщений шифруется и хранится в базе данных только в зашифрованном виде.
+Сервер построен на Django и Channels, поэтому обеспечивает как классические HTTP‑страницы, так и долговременные WebSocket‑соединения. 
 
-Сервер построен на Django и Channels, поэтому обеспечивает как классические HTTP‑страницы, так и долговременные WebSocket‑соединения. Интерфейс адаптирован под десктоп и использует Bootstrap, чтобы можно было мгновенно ориентироваться в списке чатов и окне диалога.
-
-## Features
+## Функции
 - Регистрация и авторизация пользователей с загрузкой аватара.
-- Список доступных чатов и быстрый поиск собеседников.
+- Список доступных чатов и поиск собеседников.
 - Создание приватных диалогов и обмен сообщениями в реальном времени.
-- Шифрование текста сообщений (AES) перед сохранением в БД.
-- Индикация доставки и прочтения (двойные галочки) с live‑обновлением.
+- Шифрование текста сообщений перед сохранением в БД.
 - Удаление сообщений и целых чатов с подтверждением действия.
 
-## Tech Stack
-- **Backend:** Python 3, Django, Django Channels, ASGI.
-- **Realtime:** WebSocket через Channels, Redis/Channels Layer.
-- **Database:** SQLite (по умолчанию) или другая поддерживаемая Django СУБД.
-- **Frontend:** Django Templates, Bootstrap 5, JavaScript (ES6).
-- **Crypto:** кастомный AES‑модуль для шифрования содержимого сообщений.
+## Стек технологий
+- **Backend:** Python 3, Django, Django Channels.
+- **Database:** SQLite
+- **Frontend:** HTML, CSS, Bootstrap 5, JavaScript.
 
-## Installation
+## Установка
 1. **Клонируйте репозиторий**
    ```bash
-   git clone https://github.com/<your-org>/CommexProject.git
+   git clone https://github.com/HunterXIII/CommexProject
    cd CommexProject
    ```
 2. **Создайте виртуальное окружение**
    ```bash
    python3 -m venv .venv
-   source .venv/bin/activate  # Windows: .venv\Scripts\activate
+   source .venv/bin/activate  
    ```
 3. **Установите зависимости**
    ```bash
-   pip install --upgrade pip
    pip install -r requirements.txt
    ```
 4. **Примените миграции**
    ```bash
    python manage.py migrate
    ```
-5. **Создайте суперпользователя (опционально для админки)**
+5. **Для работы WebSocket потребуется Redis.**
+> Его также необходимо установить и запустить 
+
+6. **Создайте суперпользователя (опционально для админки)**
    ```bash
    python manage.py createsuperuser
    ```
-6. **Запустите сервер разработки**
+7. **Запустите сервер разработки**
    ```bash
    python manage.py runserver
    ```
-7. **Откройте приложение**
+8. **Откройте приложение**
    - Перейдите в браузере по адресу `http://127.0.0.1:8000/`
    - Создайте новый аккаунт или войдите под суперпользователем.
 
-> Для корректной работы WebSocket потребуется настроенный Channels Layer (например, Redis). Локально можно использовать встроенный InMemoryChannelLayer, но для production обязательно разверните Redis и пропишите настройки в `settings.py`.
+## Скриншот 
+- Главная
+![Главная страница](docs/img/home.png)
+- Регистрации
+![Регистрация](Register.png)
+- Поиск
+![Поиск](Search.png)
+- Чат
+![Чат](Chat.png)
+
+## Схема базы данных
+```mermaid
+erDiagram
+    MESSENGERUSER {
+        int id PK
+        varchar username
+        varchar first_name
+        varchar last_name
+        varchar email
+        bool is_superuser
+        bool is_staff
+        bool is_active
+        datetime last_login
+        datetime date_joined
+        bool status
+        varchar profile_image
+        date birthday
+        varchar password
+    }
+
+    CHAT {
+        int id PK
+        datetime date_of_creation
+        varchar name
+    }
+
+    CHAT_USERS {
+        int id PK
+        int chat_id FK
+        int messengeruser_id FK
+    }
+
+    TEXTMESSAGE {
+        int id PK
+        text content
+        datetime date_of_sending
+        bool is_read
+        int chat_id FK
+        int sender_id FK
+        varchar iv
+    }
+
+    MESSENGERUSER ||--o{ CHAT_USERS : ""
+    CHAT ||--o{ CHAT_USERS : ""
+    CHAT ||--o{ TEXTMESSAGE : ""
+    MESSENGERUSER ||--o{ TEXTMESSAGE : ""
+```
 
 ## Архитектурная схема
 ```mermaid
@@ -61,6 +115,7 @@ graph LR
     B -- ORM --> D[(База данных)]
     C -- ORM --> D
     C -- Crypto --> E[AES модуль]
+    B -- Crypto --> E
 ```
 
 
