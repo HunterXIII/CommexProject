@@ -96,7 +96,7 @@ erDiagram
     MESSENGERUSER ||--o{ CHAT_USERS : ""
     CHAT ||--o{ CHAT_USERS : ""
     CHAT ||--o{ TEXTMESSAGE : ""
-    MESSENGERUSER ||--o{ TEXTMESSAGE : ""
+
 ```
 
 ## Архитектурная схема
