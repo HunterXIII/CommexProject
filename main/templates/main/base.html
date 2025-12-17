@@ -148,7 +148,7 @@
                 {% if user.is_authenticated %}
                 <span class="text-muted small">Привет, {{ user.username }}</span>
                 <a href="{% url 'chat_list' %}" class="btn btn-outline-light btn-sm">Чаты</a>
-                <a href="{% url 'logout' %}" class="btn btn-outline-light btn-sm">Выйти</a>
+                <form method="post" action="{% url 'logout' %}">{% csrf_token %}<button type="submit" class="btn btn-outline-light btn-sm">Выйти</button></form>
                 {% else %}
                 <a href="{% url 'login' %}" class="btn btn-outline-light btn-sm px-4">Войти</a>
                 <a href="{% url 'register' %}" class="btn btn-primary btn-sm px-4">Регистрация</a>

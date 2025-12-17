@@ -78,11 +78,9 @@
                     <span class="checkmarks">
                         {% if msg.is_read %}✓✓{% else %}✓{% endif %}
                     </span>
-                    <button type="button"
-                        class="btn btn-link p-0 text-decoration-none text-muted small ms-2 message-delete-btn"
-                        data-delete-message="true" data-message-id="{{ msg.id }}">
+                    <a href="{% url 'delete_message' msg.id %}" class="btn btn-link p-0 text-decoration-none text-muted small ms-2 message-delete-btn">
                         <i class="bi bi-trash"></i>
-                    </button>
+                    </a>
                     {% endif %}
                 </div>
             </div>
@@ -112,128 +110,115 @@
 
 <script>
     const chatId = "{{ chat.id }}";
-    const userUsername = "{{ request.user.username }}";
-
-    const messagesContainer = document.getElementById('messages-container');
-
-    if (messagesContainer) {
-        const inputField = document.getElementById('message-input');
-        const sendBtn = document.getElementById('send-btn');
-
-        // Автоскролл при загрузке
-        messagesContainer.scrollTop = messagesContainer.scrollHeight;
-
-        // WebSocket init
-        const chatSocket = new WebSocket(
-            (window.location.protocol === "https:" ? "wss://" : "ws://") +
-            window.location.host +
-            "/ws/chat/" + chatId + "/"
-        );
-
-        // Получение сообщения
-        chatSocket.onmessage = function (e) {
-            const data = JSON.parse(e.data);
-            if (data.event === "message_created") {
-                addMessageToUI(data.user, data.message, data.message_id);
-            } else if (data.event === "message_deleted") {
-                removeMessageFromUI(data.message_id);
-            }
-        };
-
-        chatSocket.onclose = function () {
-            console.error("WebSocket closed unexpectedly");
-        };
-
-        // Отправка сообщения
-        sendBtn.onclick = sendMessage;
-        inputField.addEventListener("keydown", (e) => {
-            if (e.key === "Enter") sendMessage();
-        });
-
-        messagesContainer.addEventListener("click", (e) => {
-            const deleteBtn = e.target.closest("[data-delete-message='true']");
-            if (!deleteBtn) return;
-            const messageId = deleteBtn.dataset.messageId;
-            if (messageId) {
-                requestDelete(messageId);
-            }
-        });
-
-        function sendMessage() {
-            const message = inputField.value.trim();
-            if (!message) return;
-
-            chatSocket.send(JSON.stringify({
-                "action": "send_message",
-                "message": message
-            }));
-
-            inputField.value = "";
+    const currentUser = "{{ request.user.username }}";
+    
+    const container = document.getElementById("messages-container");
+    const input = document.getElementById("message-input");
+    const sendBtn = document.getElementById("send-btn");
+    
+    const socket = new WebSocket(
+        (location.protocol === "https:" ? "wss://" : "ws://") +
+        location.host + "/ws/chat/" + chatId + "/"
+    );
+    
+    // ======================
+    // RECEIVE
+    // ======================
+    socket.onmessage = (e) => {
+        const data = JSON.parse(e.data);
+    
+        if (data.event === "message_created") {
+            addMessage(data);
         }
-
-        function requestDelete(messageId) {
-            chatSocket.send(JSON.stringify({
-                "action": "delete_message",
-                "message_id": messageId
-            }));
+    
+        if (data.event === "message_deleted") {
+            removeMessage(data.message_id);
         }
-
-
-        // ➤ Добавление сообщения в интерфейс
-        function addMessageToUI(username, message, messageId) {
-            const wrapper = document.createElement("div");
-            wrapper.classList.add("d-flex", "mb-3");
-            wrapper.classList.add(username === userUsername ? "justify-content-end" : "justify-content-start");
-            wrapper.dataset.messageId = messageId;
-
-            // delete button only for my messages
-            const deleteBtn = username === userUsername
-                ? `<button type="button"
-                        class="btn btn-link p-0 text-decoration-none text-muted small ms-2"
-                        data-delete-message="true" data-message-id="${messageId}">
-                        <i class="bi bi-trash"></i>
-                   </button>`
-                : "";
-
-            wrapper.innerHTML = `
-                <div class="message-bubble ${username === userUsername ? "my" : "their"}">
-                    <div class="text">${message}</div>
-                    <div class="meta">
-                        <span class="time">${currentTime()}</span>
-
-                        ${username === userUsername ? `<span class="checkmarks">✓</span>` : ""}
-                        ${deleteBtn}
-                    </div>
+    
+        if (data.event === "message_read") {
+            markAsRead(data.message_id);
+        }
+    };
+    
+    // ======================
+    // SEND
+    // ======================
+    sendBtn.onclick = sendMessage;
+    input.addEventListener("keydown", e => {
+        if (e.key === "Enter") sendMessage();
+    });
+    
+    function sendMessage() {
+        const text = input.value.trim();
+        if (!text) return;
+    
+        socket.send(JSON.stringify({
+            type: "send_message",
+            message: text
+        }));
+    
+        input.value = "";
+    }
+    
+    // ======================
+    // UI
+    // ======================
+    function addMessage(data) {
+        const isMine = data.user === currentUser;
+    
+        const wrapper = document.createElement("div");
+        wrapper.classList.add("d-flex", "mb-3");
+        wrapper.classList.add(isMine ? "justify-content-end" : "justify-content-start");
+        wrapper.dataset.messageId = data.message_id;
+    
+        wrapper.innerHTML = `
+            <div class="message-bubble ${isMine ? "my" : "their"}">
+                <div class="text">${data.message}</div>
+                <div class="meta">
+                    <span class="time">${data.time}</span>
+                    ${isMine ? `
+                        <span class="checkmarks">${data.is_read ? "✓✓" : "✓"}</span>
+                        <button class="btn btn-link p-0 text-muted small ms-2"
+                            onclick="deleteMessage(${data.message_id})">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    ` : ""}
                 </div>
-            `;
-
-            messagesContainer.appendChild(wrapper);
-
-            // Автоскролл
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
-        }
-
-        function removeMessageFromUI(messageId) {
-            if (!messageId) return;
-            const messageEl = messagesContainer.querySelector(`[data-message-id="${messageId}"]`);
-            if (messageEl) {
-                messageEl.remove();
-            }
-        }
-
-        function currentTime() {
-            const now = new Date();
-            return now.getHours().toString().padStart(2, '0') + ":" +
-                now.getMinutes().toString().padStart(2, '0');
+            </div>
+        `;
+    
+        container.appendChild(wrapper);
+        container.scrollTop = container.scrollHeight;
+    
+        if (!isMine) {
+            socket.send(JSON.stringify({
+                type: "read_message",
+                message_id: data.message_id
+            }));
         }
     }
-
-    const messageInput = document.getElementById('message-input');
-    if (messageInput) {
-        messageInput.focus();
-        window.addEventListener('focus', () => messageInput.focus());
+    
+    function deleteMessage(id) {
+        socket.send(JSON.stringify({
+            type: "delete_message",
+            message_id: id
+        }));
     }
-
+    
+    function removeMessage(id) {
+        const el = container.querySelector(`[data-message-id="${id}"]`);
+        if (el) el.remove();
+    }
+    
+    function markAsRead(id) {
+        const el = container.querySelector(
+            `[data-message-id="${id}"] .checkmarks`
+        );
+        if (el) el.textContent = "✓✓";
+    }
 </script>
+    
+    
+    
 
 {% endblock %}

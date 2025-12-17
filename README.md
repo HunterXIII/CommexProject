@@ -65,15 +65,7 @@ erDiagram
     MESSENGERUSER {
         int id PK
         varchar username
-        varchar first_name
-        varchar last_name
         varchar email
-        bool is_superuser
-        bool is_staff
-        bool is_active
-        datetime last_login
-        datetime date_joined
-        bool status
         varchar profile_image
         date birthday
         varchar password
