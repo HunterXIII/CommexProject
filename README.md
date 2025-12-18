@@ -102,7 +102,7 @@ erDiagram
 ## Архитектурная схема
 ```mermaid
 graph LR
-    A[Браузер<br>HTML/JS] -- HTTP --> B[Django Views<br>REST/Template]
+    A[Браузер<br>HTML/JS] -- HTTP --> B[Django Views<br>Template]
     A -- WebSocket --> C[Channels Consumers]
     B -- ORM --> D[(База данных)]
     C -- ORM --> D
