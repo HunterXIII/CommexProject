@@ -6,18 +6,14 @@ from cryptography.hazmat.primitives import constant_time
 import secrets
 import binascii
 
-# ===== КЛЮЧ =====
-# Ожидаем HEX-ключ из .env (64 hex символа = 32 байта)
 AES_KEY = bytes.fromhex(os.getenv("AES_SECRET_KEY"))
 
-BLOCK_SIZE = 128  # bits (AES block size)
+BLOCK_SIZE = 128  
 
 
 def encrypt_message(plain_text: str) -> tuple[str, str]:
-    """
-    Шифрует сообщение
-    Возвращает (encrypted_text_hex, iv_hex)
-    """
+    """Шифрует сообщение Возвращает (encrypted_text_hex, iv_hex)"""
+    
     iv = secrets.token_bytes(16)
 
     padder = PKCS7(BLOCK_SIZE).padder()
@@ -39,9 +35,8 @@ def encrypt_message(plain_text: str) -> tuple[str, str]:
 
 
 def decrypt_message(encrypted_hex: str, iv_hex: str) -> str:
-    """
-    Расшифровывает сообщение
-    """
+    """Расшифровывает сообщение"""
+
     encrypted = binascii.unhexlify(encrypted_hex)
     iv = binascii.unhexlify(iv_hex)
 

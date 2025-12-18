@@ -1,0 +1,65 @@
+{% extends 'main/base.html' %}
+{% block title %}Редактировать профиль{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <div class="card p-4 p-md-5">
+            <h2 class="fw-bold text-center mb-4">Настройки профиля</h2>
+
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Имя пользователя</label>
+                    {{ form.username }}
+                    {% if form.username.errors %}
+                    <div class="text-danger small mt-1">{{ form.username.errors|join:" " }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Email</label>
+                    {{ form.email }}
+                    {% if form.email.errors %}
+                    <div class="text-danger small mt-1">{{ form.email.errors|join:" " }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Дата рождения</label>
+                    {{ form.birthday }}
+                    {% if form.birthday.errors %}
+                    <div class="text-danger small mt-1">{{ form.birthday.errors|join:" " }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Аватар</label>
+                    {{ form.profile_image }}
+                    {% if form.profile_image.errors %}
+                    <div class="text-danger small mt-1">{{ form.profile_image.errors|join:" " }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="form-check form-switch mb-4">
+                    {{ form.status }}
+                    <label class="form-check-label" for="{{ form.status.id_for_label }}">Онлайн-статус</label>
+                </div>
+
+                {% if form.non_field_errors %}
+                <div class="alert alert-danger">
+                    {{ form.non_field_errors|join:" " }}
+                </div>
+                {% endif %}
+
+                <div class="d-flex gap-2">
+                    <a href="{% url 'profile' request.user.pk %}" class="btn btn-outline-light w-50">Отмена</a>
+                    <button type="submit" class="btn btn-primary w-50">Сохранить</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

@@ -8,6 +8,8 @@ from .models import MessengerUser, Chat, TextMessage
 
 @admin.register(MessengerUser)
 class MessengerUserAdmin(UserAdmin):
+    """Настройки отображения и редактирования пользователей в админке."""
+
     add_form = MessengerUserCreationForm      
     form = MessengerUserChangeForm             
     model = MessengerUser
