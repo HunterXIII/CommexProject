@@ -12,7 +12,7 @@
 
 ## Стек технологий
 - **Backend:** Python 3, Django, Django Channels.
-- **Database:** SQLite
+- **Database:** SQLite, Redis
 - **Frontend:** HTML, CSS, Bootstrap 5, JavaScript.
 
 ## Установка
