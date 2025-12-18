@@ -15,10 +15,14 @@ from django.views import View
 from .crypto.aes import decrypt_message
 
 class HomeView(TemplateView):
+    """Отображает главную страницу с описанием сервиса."""
+
     template_name = "main/home.html"
 
 
 class RegisterView(FormView):
+    """Обрабатывает регистрацию и автоматический вход после создания аккаунта."""
+
     template_name = "main/registration/register.html"
     form_class = MessengerUserCreationForm
     success_url = reverse_lazy('chat_list')
@@ -30,6 +34,8 @@ class RegisterView(FormView):
 
 
 class UserLoginView(DjangoLoginView):
+    """Вход в аккаунт."""
+
     template_name = "main/registration/login.html"
     authentication_form = AuthenticationForm
 
@@ -38,10 +44,14 @@ class UserLoginView(DjangoLoginView):
 
 
 class UserLogoutView(DjangoLogoutView):
+    """Выход из аккаунта."""
+
     next_page = 'home'
 
 
 class ChatListView(ListView):
+    """Показывает все чаты, в которых участвует текущий пользователь."""
+
     model = Chat
     template_name = "main/chats/chat_list.html"
 
@@ -58,6 +68,8 @@ class ChatListView(ListView):
     
     
 class ChatSearchList(ListView):
+    """Позволяет искать пользователей для создания нового чата."""
+
     model = MessengerUser
     template_name = "main/chats/search.html"
 
@@ -69,9 +81,10 @@ class ChatSearchList(ListView):
         else:
             context["search_users"] = MessengerUser.objects.none()
         return context
-    
 
 class ChatView(ChatAccessMixin, DetailView):
+    """Отображает конкретный чат."""
+
     model = Chat
     template_name = "main/chats/chat_detail.html"
     context_object_name = "chat"
@@ -100,6 +113,8 @@ class ChatView(ChatAccessMixin, DetailView):
 
 
 class StartChatView(LoginRequiredMixin, View):
+    """Создаёт или находит чат между двумя пользователями."""
+
     http_method_names = ['post']
 
     def post(self, request, user_id, *args, **kwargs):
@@ -121,6 +136,8 @@ class StartChatView(LoginRequiredMixin, View):
 
 
 class MessageDeleteView(LoginRequiredMixin, DeleteView):
+    """Даёт автору возможность удалить собственное сообщение."""
+
     model = TextMessage
     template_name = "main/chats/delete_confirm.html"
     context_object_name = "message"
@@ -150,6 +167,8 @@ class MessageDeleteView(LoginRequiredMixin, DeleteView):
 
 
 class ChatDeleteView(LoginRequiredMixin, DeleteView):
+    """Удаляет весь чат по подтверждению участника."""
+
     model = Chat
     template_name = "main/chats/delete_confirm.html"
     context_object_name = "chat"
@@ -181,6 +200,23 @@ class ChatDeleteView(LoginRequiredMixin, DeleteView):
 
 
 class ProfileView(DetailView):
+    """Показывает профиль пользователя."""
+
     model = MessengerUser
     template_name = "main/profile.html"
     context_object_name = "profile"
+
+
+class ProfileUpdateView(LoginRequiredMixin, UpdateView):
+    """Предоставляет форму редактирования для текущего пользователя."""
+
+    model = MessengerUser
+    form_class = MessengerUserChangeForm
+    template_name = "main/profile_edit.html"
+    context_object_name = "profile"
+
+    def get_object(self, queryset=None):
+        return self.request.user
+
+    def get_success_url(self):
+        return reverse('profile', args=[self.request.user.pk])

@@ -5,6 +5,8 @@ from .models import MessengerUser
 
 
 class MessengerUserCreationForm(UserCreationForm):
+    """Форма регистрации нового пользователя мессенджера."""
+
     class Meta(UserCreationForm.Meta):
         model = MessengerUser
         fields = ('username', 'email', 'birthday', 'profile_image')
@@ -22,6 +24,20 @@ class MessengerUserCreationForm(UserCreationForm):
 
 
 class MessengerUserChangeForm(UserChangeForm):
+    """Форма редактирования профиля."""
+
+    password = None
+
     class Meta:
         model = MessengerUser
         fields = ('username', 'email', 'birthday', 'profile_image', 'status')
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field_name, field in self.fields.items():
+            widget = field.widget
+            if isinstance(widget, forms.CheckboxInput):
+                widget.attrs.update({'class': 'form-check-input'})
+            else:
+                widget.attrs.update({'class': 'form-control'})
+            field.help_text = None

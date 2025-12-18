@@ -15,5 +15,6 @@ urlpatterns = [
     
     path('chat/<int:chat_id>/delete/', ChatDeleteView.as_view(), name='delete_chat'),
     path('message/<int:message_id>/delete/', MessageDeleteView.as_view(), name='delete_message'),
-    path('profile/<int:pk>', ProfileView.as_view(), name='profile'),
+    path('profile/edit/', ProfileUpdateView.as_view(), name='profile_edit'),
+    path('profile/<int:pk>/', ProfileView.as_view(), name='profile'),
 ]

@@ -4,23 +4,46 @@
 {% block title %}{{ profile.username }}{% endblock %}
 
 {% block content %}
-<main>
-    <div>
-        <img
-            src="{% if profile.profile_image %}{{ profile.profile_image.url }}{% else %}{% static 'img/default_avatar.jpg' %}{% endif %}"
-            alt="Аватар {{ profile.username }}"
-            width="150"
-            height="150"
-        />
-    </div>
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <div class="card p-4 p-md-5">
+            <div class="text-center">
+                <img src="{% if profile.profile_image %}{{ profile.profile_image.url }}{% else %}{% static 'img/default_avatar.jpg' %}{% endif %}"
+                    alt="Аватар {{ profile.username }}"
+                    class="rounded-circle border border-secondary mb-3"
+                    width="140"
+                    height="140">
+                <h1 class="fw-bold">{{ profile.username }}</h1>
+                <span class="badge {% if profile.status %}bg-success{% else %}bg-secondary{% endif %} px-3 py-2">
+                    {% if profile.status %}В сети{% else %}Не в сети{% endif %}
+                </span>
+            </div>
 
-    <div>
-        <h1>{{ profile.username }}</h1>
-        {% if profile.status %}
-            <span>В сети</span>
-        {% else %}
-            <span>Не в сети</span>
-        {% endif %}
+            <div class="mt-4">
+                <div class="mb-3">
+                    <div class="text-muted">Email</div>
+                    <div>{{ profile.email|default:"—" }}</div>
+                </div>
+                <div class="mb-3">
+                    <div class="text-muted">Дата рождения</div>
+                    <div>
+                        {% if profile.birthday %}
+                            {{ profile.birthday|date:"d.m.Y" }}
+                        {% else %}
+                            —
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            {% if request.user == profile %}
+            <div class="mt-4 text-center">
+                <a href="{% url 'profile_edit' %}" class="btn btn-primary px-4">
+                    <i class="bi bi-pencil-square me-2"></i>Редактировать профиль
+                </a>
+            </div>
+            {% endif %}
+        </div>
     </div>
-</main>
+</div>
 {% endblock %}

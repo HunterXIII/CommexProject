@@ -4,6 +4,7 @@ from .crypto.aes import decrypt_message
 # Create your models here.
 
 class MessengerUser(AbstractUser):
+    """Профиль пользователя мессенджера."""
 
     birthday = models.DateField(blank=True, null=True, verbose_name="Дата рождения")
     status = models.BooleanField(default=False)
@@ -14,6 +15,7 @@ class MessengerUser(AbstractUser):
 
 
 class Chat(models.Model):
+    """Диалог между пользователями."""
     # user1 = models.ForeignKey(MessengerUser, on_delete=models.CASCADE, related_name='user1')
     # user2 = models.ForeignKey(MessengerUser, on_delete=models.CASCADE, related_name='user2')
 
@@ -47,6 +49,7 @@ class Chat(models.Model):
 
 
 class TextMessage(models.Model):
+    """Сообщение внутри чата."""
     content = models.TextField()
     date_of_sending = models.DateTimeField(auto_now_add=True)  # уже исправили раньше
     chat = models.ForeignKey(Chat, on_delete=models.CASCADE, related_name='messages')  # ← добавь related_name
